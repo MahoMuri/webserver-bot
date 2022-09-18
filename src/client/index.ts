@@ -43,6 +43,8 @@ export class Bot extends Client {
         consola.wrapConsole();
         this.consola = consola.withScope(`@${this.user.username}｜`);
 
+        this.webServer = new WebServer(this).preFlight();
+
         // Command registry
         const cmdTable = [];
         const commandsPath = path.join(__dirname, "..", "commands");
@@ -63,8 +65,6 @@ export class Bot extends Client {
                 }
             });
         });
-
-        this.webServer = new WebServer(this).preFlight();
 
         // Event registry
         const eventTable = [];
