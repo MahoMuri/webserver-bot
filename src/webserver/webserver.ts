@@ -1,4 +1,4 @@
-import { ChannelType, User } from "discord.js";
+import { ChannelType, SnowflakeUtil, User } from "discord.js";
 import express, { Express, Router } from "express";
 import { Bot } from "../client";
 
@@ -33,8 +33,8 @@ export class WebServer {
     }
 
     private handleRoutes() {
-        this.router.get("/users/:id", async (req, res) => {
-            const { id } = req.params;
+        this.router.get("/users/:idOrUsername", async (req, res) => {
+            const { idOrUsername } = req.params;
             const { channel } = req.query;
 
             let user: User;
@@ -52,13 +52,30 @@ export class WebServer {
                         return;
                     }
 
-                    user = guildChannel.members.find((u) => u.id === id)?.user;
+                    user = guildChannel.members.find(
+                        (u) => u.id === idOrUsername
+                    )?.user;
+
+                    if (!user) {
+                        user = guildChannel.members.find(
+                            (u) => u.user.username === idOrUsername
+                        )?.user;
+                    }
                 } else {
-                    user = await this.bot.users.fetch(id);
+                    try {
+                        SnowflakeUtil.deconstruct(idOrUsername);
+                        user = await this.bot.users.fetch(idOrUsername);
+                    } catch (error) {
+                        user = this.bot.users.cache.find(
+                            (u) => u.username === idOrUsername
+                        );
+                    }
                 }
 
                 if (!user) {
-                    res.status(404).send("User not found!");
+                    res.status(404).send(
+                        "User not found or cached! Try adding a channel ID."
+                    );
                     return;
                 }
             } catch (error) {
